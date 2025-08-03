@@ -36,6 +36,9 @@ func main() {
 	router.Use(gin.Logger())
 	router.Use(gin.Recovery())
 
+	// Servir archivos estáticos desde la carpeta ./uploads
+	router.Static("/uploads", "./uploads")
+
 	// Inicializar rutas de cada módulo
 
 	// Roles
@@ -65,6 +68,7 @@ func main() {
 	log.Println("- Rutas de tutorados: /tutorados")
 	log.Println("- Rutas de docentes: /docentes")
 	log.Println("- Rutas de permisos: /permissions")
+	log.Println("- Acceso a imágenes: http://localhost:8000/uploads/<archivo>")
 
 	if err := router.Run(":8000"); err != nil {
 		log.Fatal("Error al iniciar el servidor:", err)

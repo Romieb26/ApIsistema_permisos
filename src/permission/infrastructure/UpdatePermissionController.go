@@ -2,7 +2,9 @@ package infrastructure
 
 import (
 	"net/http"
+	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/Romieb26/ApIsistema_permisos/src/permission/application"
@@ -24,27 +26,35 @@ func (ctrl *UpdatePermissionController) Run(c *gin.Context) {
 		return
 	}
 
-	var req struct {
-		TutoradoID int32  `json:"id_tutorado_fk"`
-		DocenteID  int32  `json:"id_docente_fk"`
-		Evidencia  string `json:"evidencia"`
-		Date       string `json:"date"`
-		Motivo     string `json:"motivo"`
-		Estatus    string `json:"estatus"`
+	tutoradoID, _ := strconv.Atoi(c.PostForm("id_tutorado_fk"))
+	docenteID, _ := strconv.Atoi(c.PostForm("id_docente_fk"))
+	date := c.PostForm("date")
+	motivo := c.PostForm("motivo")
+	estatus := c.PostForm("estatus")
+
+	// Manejo opcional de imagen
+	var imagePath string
+	file, err := c.FormFile("evidencia")
+	if err == nil {
+		timestamp := time.Now().Unix()
+		filename := filepath.Base(file.Filename)
+		imagePath = filepath.Join("uploads", strconv.FormatInt(timestamp, 10)+"_"+filename)
+
+		if err := c.SaveUploadedFile(file, imagePath); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo guardar la nueva imagen"})
+			return
+		}
 	}
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	// Si no hay nueva imagen, se puede dejar el campo vacío o actualizar con la anterior desde DB si se desea (requiere modificación del repositorio).
 
 	permission := entities.NewPermission(
-		req.TutoradoID,
-		req.DocenteID,
-		req.Evidencia,
-		req.Date,
-		req.Motivo,
-		req.Estatus,
+		int32(tutoradoID),
+		int32(docenteID),
+		imagePath,
+		date,
+		motivo,
+		estatus,
 	)
 	permission.ID = int32(id)
 
